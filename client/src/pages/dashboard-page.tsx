@@ -7,12 +7,90 @@ import { QuoteCard } from "@/components/quote-card";
 import { MoodSelector } from "@/components/mood-selector";
 import { ExamChart } from "@/components/exam-chart";
 import { Award, Target, TrendingUp, Plus } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import type { Habit, ExamWithSubject, Mood } from "@shared/schema";
+import { AddHabitDialog } from "@/components/add-habit-dialog";
+import { AddExamDialog } from "@/components/add-exam-dialog";
+import { useToast } from "@/hooks/use-toast";
+import { isUnauthorizedError } from "@/lib/authUtils";
 
 export function DashboardPage() {
-  const [mood, setMood] = useState<"happy" | "tired" | "stressed" | "focused">("happy");
+  const [addHabitOpen, setAddHabitOpen] = useState(false);
+  const [addExamOpen, setAddExamOpen] = useState(false);
+  const { toast } = useToast();
+
+  const { data: habits = [] } = useQuery<Habit[]>({
+    queryKey: ["/api/habits"]
+  });
+
+  const { data: exams = [] } = useQuery<ExamWithSubject[]>({
+    queryKey: ["/api/exams"]
+  });
+
+  const { data: todayMood } = useQuery<Mood | null>({
+    queryKey: ["/api/moods/today"]
+  });
+
+  const toggleHabitMutation = useMutation({
+    mutationFn: async ({ id, date }: { id: string; date: string }) => {
+      return await apiRequest("POST", `/api/habits/${id}/toggle`, { date });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
+    },
+    onError: (error: Error) => {
+      if (isUnauthorizedError(error)) {
+        toast({ title: "Unauthorized", description: "You are logged out. Logging in again...", variant: "destructive" });
+        setTimeout(() => { window.location.href = "/api/login"; }, 500);
+      }
+    }
+  });
+
+  const saveMoodMutation = useMutation({
+    mutationFn: async (mood: { mood: string; energy: number; date: string }) => {
+      return await apiRequest("POST", "/api/moods", mood);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/moods/today"] });
+      toast({ title: "Success", description: "Mood saved!" });
+    },
+    onError: (error: Error) => {
+      if (isUnauthorizedError(error)) {
+        toast({ title: "Unauthorized", description: "You are logged out. Logging in again...", variant: "destructive" });
+        setTimeout(() => { window.location.href = "/api/login"; }, 500);
+      }
+    }
+  });
+
+  const [selectedMood, setSelectedMood] = useState<"happy" | "tired" | "stressed" | "focused">("happy");
   const [energy, setEnergy] = useState(3);
-  
+
+  useEffect(() => {
+    if (todayMood) {
+      setSelectedMood(todayMood.mood as any);
+      setEnergy(todayMood.energy);
+    }
+  }, [todayMood]);
+
+  const handleMoodChange = (mood: "happy" | "tired" | "stressed" | "focused") => {
+    setSelectedMood(mood);
+    const today = new Date().toISOString().split('T')[0];
+    saveMoodMutation.mutate({ mood, energy, date: today });
+  };
+
+  const handleEnergyChange = (newEnergy: number) => {
+    setEnergy(newEnergy);
+    const today = new Date().toISOString().split('T')[0];
+    saveMoodMutation.mutate({ mood: selectedMood, energy: newEnergy, date: today });
+  };
+
+  const handleToggleHabit = (id: string) => {
+    const today = new Date().toISOString().split('T')[0];
+    toggleHabitMutation.mutate({ id, date: today });
+  };
+
   const quotes = [
     "Success is the sum of small efforts repeated day in and day out.",
     "The expert in anything was once a beginner.",
@@ -22,8 +100,16 @@ export function DashboardPage() {
   
   const todayQuote = quotes[new Date().getDate() % quotes.length];
   
-  const nextWeek = new Date();
-  nextWeek.setDate(nextWeek.getDate() + 7);
+  const completedHabitsToday = habits.filter(h => {
+    const today = new Date().toISOString().split('T')[0];
+    return h.completedDates.includes(today);
+  }).length;
+
+  const totalStreak = habits.reduce((sum, h) => sum + h.streak, 0);
+  const avgStreak = habits.length > 0 ? Math.round(totalStreak / habits.length) : 0;
+
+  const upcomingExams = exams.filter(e => new Date(e.date) > new Date()).slice(0, 2);
+  const completedExams = exams.filter(e => e.status === "completed").length;
 
   return (
     <div className="space-y-6 p-6 pb-24 md:pb-6" data-testid="page-dashboard">
@@ -34,24 +120,23 @@ export function DashboardPage() {
 
       <div className="grid gap-4 md:grid-cols-3">
         <StatCard
-          title="Average Grade"
-          value="8.5"
-          icon={Award}
-          subtitle="+0.5 from last month"
-          trend="up"
-        />
-        <StatCard
           title="Active Habits"
-          value="12"
+          value={habits.length}
           icon={Target}
-          subtitle="5 completed today"
+          subtitle={`${completedHabitsToday} completed today`}
         />
         <StatCard
           title="Study Streak"
-          value="7"
+          value={avgStreak}
           icon={TrendingUp}
-          subtitle="Days in a row"
+          subtitle="Average streak"
           trend="up"
+        />
+        <StatCard
+          title="Exams Progress"
+          value={completedExams}
+          icon={Award}
+          subtitle={`of ${exams.length} total`}
         />
       </div>
 
@@ -61,61 +146,89 @@ export function DashboardPage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold text-foreground">Today's Habits</h2>
-            <Button size="sm" className="gap-2" data-testid="button-add-habit">
+            <Button size="sm" className="gap-2" onClick={() => setAddHabitOpen(true)} data-testid="button-add-habit">
               <Plus className="h-4 w-4" />
               Add
             </Button>
           </div>
-          <div className="space-y-3">
-            <HabitCard
-              name="Study for 2 hours"
-              priority="high"
-              streak={7}
-              completed={true}
-              onToggle={() => console.log("toggled")}
-            />
-            <HabitCard
-              name="Exercise 30 minutes"
-              priority="medium"
-              streak={3}
-              completed={false}
-              onToggle={() => console.log("toggled")}
-            />
-            <HabitCard
-              name="Read 20 pages"
-              priority="low"
-              streak={5}
-              completed={false}
-              onToggle={() => console.log("toggled")}
-            />
-          </div>
+          {habits.length === 0 ? (
+            <Card className="p-6 text-center text-muted-foreground">
+              No habits yet. Add your first habit to get started!
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {habits.slice(0, 5).map((habit) => {
+                const today = new Date().toISOString().split('T')[0];
+                const completed = habit.completedDates.includes(today);
+                return (
+                  <HabitCard
+                    key={habit.id}
+                    name={habit.name}
+                    priority={habit.priority as any}
+                    streak={habit.streak}
+                    completed={completed}
+                    onToggle={() => handleToggleHabit(habit.id)}
+                  />
+                );
+              })}
+            </div>
+          )}
         </div>
 
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold text-foreground">Upcoming Exams</h2>
-            <Button size="sm" className="gap-2" data-testid="button-add-exam">
+            <Button size="sm" className="gap-2" onClick={() => setAddExamOpen(true)} data-testid="button-add-exam">
               <Plus className="h-4 w-4" />
               Add
             </Button>
           </div>
-          <ExamCard
-            title="Mathematics Final"
-            subject="Calculus"
-            date={nextWeek}
-            difficulty="hard"
-            progress={45}
-            status="in-progress"
-          />
-          <ExamChart completed={8} total={12} />
+          {upcomingExams.length === 0 ? (
+            <Card className="p-6 text-center text-muted-foreground">
+              No upcoming exams. Add one to start tracking!
+            </Card>
+          ) : (
+            <>
+              {upcomingExams.map((exam) => (
+                <ExamCard
+                  key={exam.id}
+                  title={exam.title}
+                  subject={exam.subject.name}
+                  date={new Date(exam.date)}
+                  difficulty={exam.difficulty as any}
+                  progress={exam.progress}
+                  status={exam.status as any}
+                />
+              ))}
+            </>
+          )}
+          <ExamChart completed={completedExams} total={exams.length} />
         </div>
       </div>
 
       <MoodSelector
-        selectedMood={mood}
+        selectedMood={selectedMood}
         energy={energy}
-        onMoodChange={setMood}
-        onEnergyChange={setEnergy}
+        onMoodChange={handleMoodChange}
+        onEnergyChange={handleEnergyChange}
+      />
+
+      <AddHabitDialog
+        open={addHabitOpen}
+        onOpenChange={setAddHabitOpen}
+        onAdd={async (habit) => {
+          await apiRequest("POST", "/api/habits", habit);
+          queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
+        }}
+      />
+
+      <AddExamDialog
+        open={addExamOpen}
+        onOpenChange={setAddExamOpen}
+        onAdd={async (exam) => {
+          console.log("Add exam:", exam);
+          setAddExamOpen(false);
+        }}
       />
     </div>
   );

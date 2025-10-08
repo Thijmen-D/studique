@@ -1,52 +1,105 @@
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { ExamCard } from "@/components/exam-card";
 import { AddExamDialog } from "@/components/add-exam-dialog";
 import { ExamChart } from "@/components/exam-chart";
 import { Plus } from "lucide-react";
 import { useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { useQuery } from "@tanstack/react-query";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import type { ExamWithSubject, Subject } from "@shared/schema";
+import { useToast } from "@/hooks/use-toast";
+import { isUnauthorizedError } from "@/lib/authUtils";
 
 export function ExamsPage() {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const { toast } = useToast();
 
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  
-  const nextWeek = new Date();
-  nextWeek.setDate(nextWeek.getDate() + 7);
-  
-  const twoWeeks = new Date();
-  twoWeeks.setDate(twoWeeks.getDate() + 14);
+  const { data: exams = [], isLoading } = useQuery<ExamWithSubject[]>({
+    queryKey: ["/api/exams"]
+  });
 
-  const exams = [
-    {
-      id: 1,
-      title: "Mathematics Final",
-      subject: "Calculus",
-      date: tomorrow,
-      difficulty: "hard" as const,
-      progress: 75,
-      status: "in-progress" as const
-    },
-    {
-      id: 2,
-      title: "Physics Midterm",
-      subject: "Mechanics",
-      date: nextWeek,
-      difficulty: "medium" as const,
-      progress: 40,
-      status: "in-progress" as const
-    },
-    {
-      id: 3,
-      title: "Chemistry Quiz",
-      subject: "Organic Chemistry",
-      date: twoWeeks,
-      difficulty: "easy" as const,
-      progress: 10,
-      status: "not-started" as const
-    },
-  ];
+  const { data: subjects = [] } = useQuery<Subject[]>({
+    queryKey: ["/api/subjects"]
+  });
+
+  const handleAddExam = async (exam: any) => {
+    try {
+      let subjectId = exam.subjectId;
+      
+      // If no subject exists, create one
+      if (!subjectId && subjects.length === 0) {
+        const newSubject: any = await apiRequest("POST", "/api/subjects", {
+          name: exam.subject,
+          color: '#4287f5'
+        });
+        subjectId = newSubject.id;
+        queryClient.invalidateQueries({ queryKey: ["/api/subjects"] });
+      } else if (!subjectId) {
+        // Try to find existing subject by name
+        const existingSubject = subjects.find(s => s.name.toLowerCase() === exam.subject.toLowerCase());
+        if (existingSubject) {
+          subjectId = existingSubject.id;
+        } else {
+          // Create new subject
+          const newSubject: any = await apiRequest("POST", "/api/subjects", {
+            name: exam.subject,
+            color: '#4287f5'
+          });
+          subjectId = newSubject.id;
+          queryClient.invalidateQueries({ queryKey: ["/api/subjects"] });
+        }
+      }
+
+      await apiRequest("POST", "/api/exams", {
+        title: exam.title,
+        subjectId,
+        date: exam.date,
+        difficulty: exam.difficulty || 'medium',
+        progress: 0,
+        status: 'not-started',
+        weight: 1,
+        notes: exam.notes || null
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ["/api/exams"] });
+      toast({ title: "Success", description: "Exam added successfully!" });
+    } catch (error: any) {
+      if (isUnauthorizedError(error)) {
+        toast({ title: "Unauthorized", description: "You are logged out. Logging in again...", variant: "destructive" });
+        setTimeout(() => { window.location.href = "/api/login"; }, 500);
+      } else {
+        toast({ title: "Error", description: "Failed to add exam", variant: "destructive" });
+      }
+    }
+  };
+
+  const renderExams = (filteredExams: ExamWithSubject[]) => {
+    if (isLoading) {
+      return <Card className="p-6 text-center text-muted-foreground">Loading...</Card>;
+    }
+
+    if (filteredExams.length === 0) {
+      return <Card className="p-6 text-center text-muted-foreground">No exams found. Add one to get started!</Card>;
+    }
+
+    return filteredExams.map((exam) => (
+      <ExamCard
+        key={exam.id}
+        title={exam.title}
+        subject={exam.subject.name}
+        date={new Date(exam.date)}
+        difficulty={exam.difficulty as any}
+        progress={exam.progress}
+        status={exam.status as any}
+      />
+    ));
+  };
+
+  const completedExams = exams.filter(e => e.status === "completed");
+  const inProgressExams = exams.filter(e => e.status === "in-progress");
+  const upcomingExams = exams.filter(e => e.status === "not-started");
 
   return (
     <div className="space-y-6 p-6 pb-24 md:pb-6" data-testid="page-exams">
@@ -62,7 +115,7 @@ export function ExamsPage() {
       </div>
 
       <div className="max-w-sm">
-        <ExamChart completed={8} total={12} />
+        <ExamChart completed={completedExams.length} total={exams.length} />
       </div>
 
       <Tabs defaultValue="all" className="w-full">
@@ -74,34 +127,26 @@ export function ExamsPage() {
         </TabsList>
         
         <TabsContent value="all" className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mt-6">
-          {exams.map((exam) => (
-            <ExamCard key={exam.id} {...exam} />
-          ))}
+          {renderExams(exams)}
         </TabsContent>
         
         <TabsContent value="upcoming" className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mt-6">
-          {exams.filter(e => e.status === "not-started").map((exam) => (
-            <ExamCard key={exam.id} {...exam} />
-          ))}
+          {renderExams(upcomingExams)}
         </TabsContent>
         
         <TabsContent value="in-progress" className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mt-6">
-          {exams.filter(e => e.status === "in-progress").map((exam) => (
-            <ExamCard key={exam.id} {...exam} />
-          ))}
+          {renderExams(inProgressExams)}
         </TabsContent>
         
         <TabsContent value="completed" className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mt-6">
-          {exams.filter(e => e.status === "completed").map((exam) => (
-            <ExamCard key={exam.id} {...exam} />
-          ))}
+          {renderExams(completedExams)}
         </TabsContent>
       </Tabs>
 
       <AddExamDialog
         open={addDialogOpen}
         onOpenChange={setAddDialogOpen}
-        onAdd={(exam) => console.log("Added exam:", exam)}
+        onAdd={handleAddExam}
       />
     </div>
   );
