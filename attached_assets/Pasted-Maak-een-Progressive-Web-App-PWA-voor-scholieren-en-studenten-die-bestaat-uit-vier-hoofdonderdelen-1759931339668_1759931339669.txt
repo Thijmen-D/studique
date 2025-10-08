@@ -1,0 +1,57 @@
+Maak een Progressive Web App (PWA) voor scholieren en studenten die bestaat uit vier hoofdonderdelen, met een minimalistische en gebruiksvriendelijke interface.
+1. Habit Tracker Dagelijkse gewoontes bijhouden en afvinken.
+Een weekoverzicht waar je alle gewoontes kunt zien en of ze voltooid zijn.
+Prioriteiten instellen voor gewoontes (belangrijk / minder belangrijk).
+Progress bars en streaks tonen om motivatie te verhogen.
+2. Toets & Studieplanner Mogelijkheid om alle toetsen van het jaar in te voeren.
+Per toets:
+vak
+weeknummer of datum
+moeilijkheidsgraad (makkelijk, gemiddeld, moeilijk)
+status (nog niet begonnen / bezig met leren / afgerond)
+voortgang in procenten (0–100%)
+notities toevoegen (tips, hoofdstukken, etc.)
+valentie (hoe zwaar telt het mee voor het eindcijfer)
+prioriteit instellen (belangrijk / minder belangrijk)
+Een overzicht dat automatisch berekent hoeveel procent van de toetsen je al hebt afgerond.
+Slimme meldingen ("Smart reminders"): bv. 3 dagen voor een toets of wanneer er nog weinig voortgang is.
+3. Cijfers & Statistieken Mogelijkheid om behaalde cijfers in te voeren.
+Automatisch gemiddelde berekenen:
+overall gemiddelde
+gemiddelde per vak
+Grafieken of tabellen om voortgang te visualiseren.
+4. Dashboard-overzicht Startscherm waar je in één oogopslag ziet:
+je gewoontes van vandaag
+de eerstvolgende toets
+je huidige gemiddelde
+Motivatiequotes of dagelijkse challenges (bv. "Vandaag 30 minuten leren zonder telefoon").
+Mood & Energy Tracker: studenten kunnen hun stemming (blij, moe, gestrest, gefocust) en energieniveau bijhouden. Dit wordt gekoppeld aan voortgang en cijfers voor inzicht.
+Extra functionaliteiten: Notificaties:
+herinneringen voor gewoontes
+meldingen wanneer een toets dichterbij komt
+Cloudopslag & synchronisatie:
+Gebruik een backend (bijv. Firebase of Supabase) om data op te slaan en te synchroniseren tussen apparaten.
+Data moet offline beschikbaar blijven via lokale opslag (IndexedDB).
+Automatische synchronisatie zodra internet beschikbaar is.
+Login systeem:
+Gebruikers kunnen inloggen (e-mail/wachtwoord of Google/Apple login).
+Gebruikers blijven ingelogd (persistent login), zodat ze niet elke keer opnieuw hoeven in te loggen.
+Optie om handmatig uit te loggen.
+Data lokaal opslaan en optioneel synchroniseren met cloud.
+Ondersteuning voor dark mode.
+Moderne, frisse stijl (lichte pastelkleuren, strakke iconen, en overzichtelijke dashboards)."is wil graag dat er een plek is waar je donkere en lichte modes uit en aan kan zetten en ook een tijd instelling bij 10:00 licht modes aan en 18:00 donker aan. Waar je dit kan aanpassen wil ik ook dat je de kleuren van de app kan aanpassen je kan dan kiezen uit thema's of zelf de kleuren kiezen. Dit zijn de thema's T1: 
+#424874, 
+#A6B1E1, 
+#F49390, 
+#ECE4B7, 
+#355070. T2: 
+#98C1D9, 
+#6969B3, 
+#B27C66, 
+#F6F5AE, 
+#45503B. en T3: 
+#FCEFEF, 
+#7FD8BE, 
+#A1FCDF, 
+#FCD29F, 
+#FCAB64. De app moet compleet engels. de app moet hele maal engeels en alles moet met de kleuren thema's aansluiten. Ook moet er bij de toetsen een circel diagram die laat zien hoeveel van de ingevoerde toetsen je al hebt gehad. de quotes moeten ook engels en de kleuren moeten meer gebruikt woorden dus niet wit met andere acenten maar een lichte kleur uit het thema met de rest van de kleuren verdeel over knopen en tekst maar alles moet geod lees baar zijn. En de bovenste en onderste witte balk waar de tijd en batterij staat moet ook in de kleur van de app. je kan de habit niet verwijderen en dit moet wel kunnen. De themas moeten meer de kleuren gebruiken dus inplaats van wit de lichtste kleur uit de thema en de acenten en tekst de andere kleuren uit de thema maar alles moet goed leesbaar blijven.
