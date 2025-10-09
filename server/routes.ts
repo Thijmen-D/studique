@@ -27,7 +27,14 @@ export function registerRoutes(app: Express): Server {
   });
 
   app.patch("/api/todos/:id", isAuthenticated, async (req, res) => {
-    const todo = await storage.updateTodo(req.params.id, req.body);
+    const updateData = { ...req.body };
+    
+    // Convert completedAt string to Date object if present
+    if (updateData.completedAt !== undefined) {
+      updateData.completedAt = updateData.completedAt ? new Date(updateData.completedAt) : null;
+    }
+    
+    const todo = await storage.updateTodo(req.params.id, updateData);
     if (!todo) return res.status(404).send("Todo not found");
     res.json(todo);
   });
