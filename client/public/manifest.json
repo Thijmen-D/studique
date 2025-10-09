@@ -1,0 +1,30 @@
+{
+  "name": "Studique",
+  "short_name": "Studique",
+  "description": "Student productivity app for managing habits, todos, exams, and grades",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#424874",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/studique-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

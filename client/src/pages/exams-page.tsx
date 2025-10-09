@@ -6,7 +6,7 @@ import { ExamChart } from "@/components/exam-chart";
 import { Plus } from "lucide-react";
 import { useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import type { ExamWithSubject, Subject } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
@@ -14,6 +14,7 @@ import { isUnauthorizedError } from "@/lib/authUtils";
 
 export function ExamsPage() {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [editingExam, setEditingExam] = useState<ExamWithSubject | null>(null);
   const { toast } = useToast();
 
   const { data: exams = [], isLoading } = useQuery<ExamWithSubject[]>({
@@ -24,16 +25,35 @@ export function ExamsPage() {
     queryKey: ["/api/subjects"]
   });
 
+  const deleteExamMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiRequest("DELETE", `/api/exams/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/exams"] });
+      toast({ title: "Success", description: "Exam deleted successfully!" });
+    },
+    onError: (error: Error) => {
+      if (isUnauthorizedError(error)) {
+        toast({ title: "Unauthorized", description: "You are logged out. Logging in again...", variant: "destructive" });
+        setTimeout(() => { window.location.href = "/api/login"; }, 500);
+      } else {
+        toast({ title: "Error", description: "Failed to delete exam", variant: "destructive" });
+      }
+    }
+  });
+
   const handleAddExam = async (exam: any) => {
     try {
       let subjectId = exam.subjectId;
       
       // If no subject exists, create one
       if (!subjectId && subjects.length === 0) {
-        const newSubject: any = await apiRequest("POST", "/api/subjects", {
+        const response = await apiRequest("POST", "/api/subjects", {
           name: exam.subject,
           color: '#4287f5'
         });
+        const newSubject = await response.json();
         subjectId = newSubject.id;
         queryClient.invalidateQueries({ queryKey: ["/api/subjects"] });
       } else if (!subjectId) {
@@ -43,10 +63,11 @@ export function ExamsPage() {
           subjectId = existingSubject.id;
         } else {
           // Create new subject
-          const newSubject: any = await apiRequest("POST", "/api/subjects", {
+          const response = await apiRequest("POST", "/api/subjects", {
             name: exam.subject,
             color: '#4287f5'
           });
+          const newSubject = await response.json();
           subjectId = newSubject.id;
           queryClient.invalidateQueries({ queryKey: ["/api/subjects"] });
         }
@@ -57,8 +78,8 @@ export function ExamsPage() {
         subjectId,
         date: exam.date,
         difficulty: exam.difficulty || 'medium',
-        progress: 0,
-        status: 'not-started',
+        progress: exam.progress || 0,
+        status: exam.status || 'not-started',
         weight: 1,
         notes: exam.notes || null
       });
@@ -93,6 +114,11 @@ export function ExamsPage() {
         difficulty={exam.difficulty as any}
         progress={exam.progress}
         status={exam.status as any}
+        onDelete={() => deleteExamMutation.mutate(exam.id)}
+        onEdit={() => {
+          setEditingExam(exam);
+          setAddDialogOpen(true);
+        }}
       />
     ));
   };
@@ -145,8 +171,34 @@ export function ExamsPage() {
 
       <AddExamDialog
         open={addDialogOpen}
-        onOpenChange={setAddDialogOpen}
-        onAdd={handleAddExam}
+        onOpenChange={(open) => {
+          setAddDialogOpen(open);
+          if (!open) setEditingExam(null);
+        }}
+        onAdd={async (exam) => {
+          if (editingExam) {
+            try {
+              await apiRequest("PATCH", `/api/exams/${editingExam.id}`, {
+                ...exam,
+                progress: exam.progress || editingExam.progress,
+                status: exam.status || editingExam.status,
+              });
+              queryClient.invalidateQueries({ queryKey: ["/api/exams"] });
+              toast({ title: "Success", description: "Exam updated successfully!" });
+              setAddDialogOpen(false);
+              setEditingExam(null);
+            } catch (error: any) {
+              if (isUnauthorizedError(error)) {
+                toast({ title: "Unauthorized", description: "You are logged out", variant: "destructive" });
+              } else {
+                toast({ title: "Error", description: "Failed to update exam", variant: "destructive" });
+              }
+            }
+          } else {
+            await handleAddExam(exam);
+            setAddDialogOpen(false);
+          }
+        }}
       />
     </div>
   );

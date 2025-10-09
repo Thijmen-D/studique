@@ -1,7 +1,8 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Calendar, Clock } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Calendar, Clock, Trash2, Edit } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 interface ExamCardProps {
@@ -11,9 +12,11 @@ interface ExamCardProps {
   difficulty: "easy" | "medium" | "hard";
   progress: number;
   status: "not-started" | "in-progress" | "completed";
+  onDelete?: () => void;
+  onEdit?: () => void;
 }
 
-export function ExamCard({ title, subject, date, difficulty, progress, status }: ExamCardProps) {
+export function ExamCard({ title, subject, date, difficulty, progress, status, onDelete, onEdit }: ExamCardProps) {
   const difficultyColors = {
     easy: "bg-success/10 text-success border-success/20",
     medium: "bg-warning/10 text-warning border-warning/20",
@@ -36,9 +39,21 @@ export function ExamCard({ title, subject, date, difficulty, progress, status }:
             <h3 className="font-semibold text-foreground" data-testid={`text-exam-title-${title.toLowerCase().replace(/\s+/g, '-')}`}>{title}</h3>
             <p className="text-sm text-muted-foreground">{subject}</p>
           </div>
-          <Badge variant="secondary" className={difficultyColors[difficulty]} data-testid={`badge-difficulty-${difficulty}`}>
-            {difficulty}
-          </Badge>
+          <div className="flex gap-1">
+            {onEdit && (
+              <Button variant="ghost" size="sm" onClick={onEdit}>
+                <Edit className="h-4 w-4" />
+              </Button>
+            )}
+            {onDelete && (
+              <Button variant="ghost" size="sm" onClick={onDelete} className="text-destructive hover:text-destructive">
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
+            <Badge variant="secondary" className={difficultyColors[difficulty]} data-testid={`badge-difficulty-${difficulty}`}>
+              {difficulty}
+            </Badge>
+          </div>
         </div>
         
         <div className="flex items-center gap-4 text-sm text-muted-foreground">

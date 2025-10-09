@@ -7,6 +7,7 @@ import { AuthProvider } from "@/hooks/use-auth";
 import { MobileNav } from "@/components/mobile-nav";
 import { DashboardPage } from "@/pages/dashboard-page";
 import { HabitsPage } from "@/pages/habits-page";
+import { TodosPage } from "@/pages/todos-page";
 import { ExamsPage } from "@/pages/exams-page";
 import { GradesPage } from "@/pages/grades-page";
 import { SettingsPage } from "@/pages/settings-page";
@@ -14,7 +15,7 @@ import AuthPage from "@/pages/auth-page";
 import { ProtectedRoute } from "@/lib/protected-route";
 import { Route, Switch } from "wouter";
 import { useState } from "react";
-import { Home, Target, BookOpen, Award, Settings, Moon, Sun } from "lucide-react";
+import { Home, Target, ListTodo, BookOpen, Award, Settings, Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/lib/theme-provider";
 
@@ -24,6 +25,7 @@ function DesktopSidebar({ active, onNavigate }: { active: string; onNavigate: (p
   const navItems = [
     { id: "dashboard", icon: Home, label: "Dashboard" },
     { id: "habits", icon: Target, label: "Habits" },
+    { id: "todos", icon: ListTodo, label: "Todos" },
     { id: "exams", icon: BookOpen, label: "Exams" },
     { id: "grades", icon: Award, label: "Grades" },
     { id: "settings", icon: Settings, label: "Settings" }
@@ -85,6 +87,7 @@ function MainApp() {
       <div className="md:pl-64">
         {activePage === "dashboard" && <DashboardPage />}
         {activePage === "habits" && <HabitsPage />}
+        {activePage === "todos" && <TodosPage />}
         {activePage === "exams" && <ExamsPage />}
         {activePage === "grades" && <GradesPage />}
         {activePage === "settings" && <SettingsPage />}

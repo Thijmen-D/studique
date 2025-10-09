@@ -39,6 +39,24 @@ export function HabitsPage() {
     toggleHabitMutation.mutate({ id, date: today });
   };
 
+  const deleteHabitMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiRequest("DELETE", `/api/habits/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
+      toast({ title: "Success", description: "Habit deleted successfully!" });
+    },
+    onError: (error: Error) => {
+      if (isUnauthorizedError(error)) {
+        toast({ title: "Unauthorized", description: "You are logged out. Logging in again...", variant: "destructive" });
+        setTimeout(() => { window.location.href = "/api/login"; }, 500);
+      } else {
+        toast({ title: "Error", description: "Failed to delete habit", variant: "destructive" });
+      }
+    }
+  });
+
   const handleAddHabit = async (habit: { name: string; priority: string }) => {
     try {
       await apiRequest("POST", "/api/habits", habit);
@@ -74,6 +92,7 @@ export function HabitsPage() {
           streak={habit.streak}
           completed={completed}
           onToggle={() => handleToggleHabit(habit.id)}
+          onDelete={() => deleteHabitMutation.mutate(habit.id)}
         />
       );
     });

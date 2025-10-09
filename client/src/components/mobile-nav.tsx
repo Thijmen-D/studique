@@ -1,4 +1,4 @@
-import { Home, Target, BookOpen, Award, Settings } from "lucide-react";
+import { Home, Target, ListTodo, BookOpen, Award, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface MobileNavProps {
@@ -10,6 +10,7 @@ export function MobileNav({ active, onNavigate }: MobileNavProps) {
   const navItems = [
     { id: "dashboard", icon: Home, label: "Home" },
     { id: "habits", icon: Target, label: "Habits" },
+    { id: "todos", icon: ListTodo, label: "Todos" },
     { id: "exams", icon: BookOpen, label: "Exams" },
     { id: "grades", icon: Award, label: "Grades" },
     { id: "settings", icon: Settings, label: "Settings" }

@@ -105,7 +105,9 @@ export const insertUserSchema = createInsertSchema(users).omit({ id: true, creat
 export const insertHabitSchema = createInsertSchema(habits).omit({ id: true, userId: true, createdAt: true, streak: true, completedDates: true, lastCompleted: true });
 export const insertTodoSchema = createInsertSchema(todos).omit({ id: true, userId: true, createdAt: true, completed: true, completedAt: true });
 export const insertSubjectSchema = createInsertSchema(subjects).omit({ id: true, userId: true, createdAt: true });
-export const insertGradeSchema = createInsertSchema(grades).omit({ id: true, userId: true, createdAt: true });
+export const insertGradeSchema = createInsertSchema(grades).omit({ id: true, userId: true, createdAt: true }).extend({
+  value: z.number().min(1).max(10, "Grade must be between 1 and 10"),
+});
 export const insertExamSchema = createInsertSchema(exams).omit({ id: true, userId: true, createdAt: true });
 export const insertMoodSchema = createInsertSchema(moods).omit({ id: true, userId: true, createdAt: true });
 export const insertUserSettingsSchema = createInsertSchema(userSettings).omit({ id: true, userId: true, createdAt: true });

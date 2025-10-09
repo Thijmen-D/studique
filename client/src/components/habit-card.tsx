@@ -1,7 +1,8 @@
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { Flame } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Flame, Trash2 } from "lucide-react";
 
 interface HabitCardProps {
   name: string;
@@ -9,9 +10,10 @@ interface HabitCardProps {
   streak: number;
   completed: boolean;
   onToggle: () => void;
+  onDelete: () => void;
 }
 
-export function HabitCard({ name, priority, streak, completed, onToggle }: HabitCardProps) {
+export function HabitCard({ name, priority, streak, completed, onToggle, onDelete }: HabitCardProps) {
   const priorityColors = {
     high: "border-l-destructive",
     medium: "border-l-warning",
@@ -38,6 +40,14 @@ export function HabitCard({ name, priority, streak, completed, onToggle }: Habit
             {streak}
           </Badge>
         )}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onDelete}
+          className="text-destructive hover:text-destructive"
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
       </div>
     </Card>
   );
