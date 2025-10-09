@@ -4,7 +4,7 @@ import { DarkModeToggle } from "@/components/dark-mode-toggle";
 import { useTheme } from "@/lib/theme-provider";
 import { Button } from "@/components/ui/button";
 import { LogOut, User } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
 import type { UserSettings } from "@shared/schema";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -12,7 +12,7 @@ import { useEffect } from "react";
 
 export function SettingsPage() {
   const { theme, setTheme, darkMode, isDark, setDarkMode } = useTheme();
-  const { user } = useAuth();
+  const { user, logoutMutation } = useAuth();
 
   const { data: settings } = useQuery<UserSettings>({
     queryKey: ["/api/settings"]
@@ -47,7 +47,7 @@ export function SettingsPage() {
   };
 
   const handleLogout = () => {
-    window.location.href = "/api/logout";
+    logoutMutation.mutate();
   };
 
   return (

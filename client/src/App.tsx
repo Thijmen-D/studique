@@ -3,19 +3,20 @@ import { queryClient } from "./lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/lib/theme-provider";
+import { AuthProvider } from "@/hooks/use-auth";
 import { MobileNav } from "@/components/mobile-nav";
 import { DashboardPage } from "@/pages/dashboard-page";
 import { HabitsPage } from "@/pages/habits-page";
 import { ExamsPage } from "@/pages/exams-page";
 import { GradesPage } from "@/pages/grades-page";
 import { SettingsPage } from "@/pages/settings-page";
-import { useState, useEffect } from "react";
-import { Home, Target, BookOpen, Award, Settings, Moon, Sun, BookOpenIcon } from "lucide-react";
+import AuthPage from "@/pages/auth-page";
+import { ProtectedRoute } from "@/lib/protected-route";
+import { Route, Switch } from "wouter";
+import { useState } from "react";
+import { Home, Target, BookOpen, Award, Settings, Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { useTheme } from "@/lib/theme-provider";
-import { useAuth } from "@/hooks/useAuth";
-import { useToast } from "@/hooks/use-toast";
 
 function DesktopSidebar({ active, onNavigate }: { active: string; onNavigate: (page: string) => void }) {
   const { toggleDark, isDark } = useTheme();
@@ -35,7 +36,7 @@ function DesktopSidebar({ active, onNavigate }: { active: string; onNavigate: (p
           <div className="p-2 bg-primary/10 rounded-lg">
             <BookOpen className="h-6 w-6 text-primary" />
           </div>
-          <h1 className="text-xl font-bold text-sidebar-foreground">StudyFlow</h1>
+          <h1 className="text-xl font-bold text-sidebar-foreground">Studique</h1>
         </div>
         
         <nav className="space-y-2">
@@ -74,72 +75,8 @@ function DesktopSidebar({ active, onNavigate }: { active: string; onNavigate: (p
   );
 }
 
-function LandingPage() {
-  const handleLogin = () => {
-    window.location.href = "/api/login";
-  };
-
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md p-8 text-center">
-        <div className="flex flex-col items-center mb-8">
-          <div className="p-4 bg-primary/10 rounded-full mb-4">
-            <BookOpenIcon className="h-12 w-12 text-primary" />
-          </div>
-          <h1 className="text-4xl font-bold text-foreground mb-2">StudyFlow</h1>
-          <p className="text-muted-foreground">Your productivity companion for academic success</p>
-        </div>
-        
-        <div className="space-y-4 mb-8">
-          <div className="flex items-center gap-3 text-left">
-            <Target className="h-5 w-5 text-primary" />
-            <p className="text-sm text-foreground">Track daily habits and build streaks</p>
-          </div>
-          <div className="flex items-center gap-3 text-left">
-            <BookOpen className="h-5 w-5 text-primary" />
-            <p className="text-sm text-foreground">Manage exams and study schedules</p>
-          </div>
-          <div className="flex items-center gap-3 text-left">
-            <Award className="h-5 w-5 text-primary" />
-            <p className="text-sm text-foreground">Monitor grades and academic performance</p>
-          </div>
-        </div>
-
-        <Button onClick={handleLogin} className="w-full" size="lg" data-testid="button-login">
-          Get Started
-        </Button>
-      </Card>
-    </div>
-  );
-}
-
-function AppContent() {
+function MainApp() {
   const [activePage, setActivePage] = useState("dashboard");
-  const { isAuthenticated, isLoading } = useAuth();
-  const { toast } = useToast();
-
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      toast({
-        title: "Please log in",
-        description: "You need to be logged in to access StudyFlow",
-      });
-    }
-  }, [isAuthenticated, isLoading, toast]);
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Card className="p-8 text-center">
-          <p className="text-muted-foreground">Loading...</p>
-        </Card>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return <LandingPage />;
-  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -158,15 +95,26 @@ function AppContent() {
   );
 }
 
+function AppContent() {
+  return (
+    <Switch>
+      <Route path="/auth" component={AuthPage} />
+      <ProtectedRoute path="/" component={MainApp} />
+    </Switch>
+  );
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <TooltipProvider>
-          <Toaster />
-          <AppContent />
-        </TooltipProvider>
-      </ThemeProvider>
+      <AuthProvider>
+        <ThemeProvider>
+          <TooltipProvider>
+            <Toaster />
+            <AppContent />
+          </TooltipProvider>
+        </ThemeProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

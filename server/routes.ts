@@ -1,34 +1,51 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
-import { insertHabitSchema, insertSubjectSchema, insertGradeSchema, insertExamSchema, insertMoodSchema } from "@shared/schema";
+import { setupAuth, isAuthenticated } from "./auth";
+import { insertHabitSchema, insertSubjectSchema, insertGradeSchema, insertExamSchema, insertMoodSchema, insertTodoSchema } from "@shared/schema";
 
-export async function registerRoutes(app: Express): Promise<Server> {
-  // Auth middleware
-  await setupAuth(app);
+export function registerRoutes(app: Express): Server {
+  // Auth middleware (from blueprint:javascript_auth_all_persistance)
+  setupAuth(app);
 
-  // Auth routes
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+  // Todos Routes  
+  app.get("/api/todos", isAuthenticated, async (req: any, res) => {
+    const userId = req.user!.id;
+    const todos = await storage.getTodos(userId);
+    res.json(todos);
+  });
+
+  app.post("/api/todos", isAuthenticated, async (req: any, res) => {
+    const userId = req.user!.id;
     try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      res.json(user);
+      const data = insertTodoSchema.parse(req.body);
+      const todo = await storage.createTodo(data, userId);
+      res.json(todo);
     } catch (error) {
-      console.error("Error fetching user:", error);
-      res.status(500).json({ message: "Failed to fetch user" });
+      res.status(400).json({ error: "Invalid todo data" });
     }
+  });
+
+  app.patch("/api/todos/:id", isAuthenticated, async (req, res) => {
+    const todo = await storage.updateTodo(req.params.id, req.body);
+    if (!todo) return res.status(404).send("Todo not found");
+    res.json(todo);
+  });
+
+  app.delete("/api/todos/:id", isAuthenticated, async (req, res) => {
+    const success = await storage.deleteTodo(req.params.id);
+    res.json({ success });
   });
   
   // Habits Routes
   app.get("/api/habits", isAuthenticated, async (req: any, res) => {
-    const userId = req.user.claims.sub;
+    const userId = req.user!.id;
     const habits = await storage.getHabits(userId);
     res.json(habits);
   });
 
   app.post("/api/habits", isAuthenticated, async (req: any, res) => {
-    const userId = req.user.claims.sub;
+    const userId = req.user!.id;
     try {
       const data = insertHabitSchema.parse(req.body);
       const habit = await storage.createHabit(data, userId);
@@ -58,13 +75,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Subjects Routes
   app.get("/api/subjects", isAuthenticated, async (req: any, res) => {
-    const userId = req.user.claims.sub;
+    const userId = req.user!.id;
     const subjects = await storage.getSubjects(userId);
     res.json(subjects);
   });
 
   app.post("/api/subjects", isAuthenticated, async (req: any, res) => {
-    const userId = req.user.claims.sub;
+    const userId = req.user!.id;
     try {
       const data = insertSubjectSchema.parse(req.body);
       const subject = await storage.createSubject(data, userId);
@@ -87,13 +104,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Grades Routes
   app.get("/api/grades", isAuthenticated, async (req: any, res) => {
-    const userId = req.user.claims.sub;
+    const userId = req.user!.id;
     const grades = await storage.getGrades(userId);
     res.json(grades);
   });
 
   app.post("/api/grades", isAuthenticated, async (req: any, res) => {
-    const userId = req.user.claims.sub;
+    const userId = req.user!.id;
     try {
       const data = insertGradeSchema.parse(req.body);
       const grade = await storage.createGrade(data, userId);
@@ -116,7 +133,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Exams Routes
   app.get("/api/exams", isAuthenticated, async (req: any, res) => {
-    const userId = req.user.claims.sub;
+    const userId = req.user!.id;
     const exams = await storage.getExams(userId);
     res.json(exams);
   });
@@ -128,7 +145,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/exams", isAuthenticated, async (req: any, res) => {
-    const userId = req.user.claims.sub;
+    const userId = req.user!.id;
     try {
       const data = insertExamSchema.parse(req.body);
       const exam = await storage.createExam(data, userId);
@@ -151,20 +168,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Moods Routes
   app.get("/api/moods", isAuthenticated, async (req: any, res) => {
-    const userId = req.user.claims.sub;
+    const userId = req.user!.id;
     const moods = await storage.getMoods(userId);
     res.json(moods);
   });
 
   app.get("/api/moods/today", isAuthenticated, async (req: any, res) => {
-    const userId = req.user.claims.sub;
+    const userId = req.user!.id;
     const today = new Date().toISOString().split('T')[0];
     const mood = await storage.getMoodByDate(userId, today);
     res.json(mood || null);
   });
 
   app.post("/api/moods", isAuthenticated, async (req: any, res) => {
-    const userId = req.user.claims.sub;
+    const userId = req.user!.id;
     try {
       const data = insertMoodSchema.parse(req.body);
       const mood = await storage.createMood(data, userId);
@@ -182,7 +199,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // User Settings Routes
   app.get("/api/settings", isAuthenticated, async (req: any, res) => {
-    const userId = req.user.claims.sub;
+    const userId = req.user!.id;
     let settings = await storage.getUserSettings(userId);
     if (!settings) {
       settings = await storage.createUserSettings({
@@ -198,7 +215,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.patch("/api/settings", isAuthenticated, async (req: any, res) => {
-    const userId = req.user.claims.sub;
+    const userId = req.user!.id;
     const settings = await storage.updateUserSettings(userId, req.body);
     if (!settings) {
       const newSettings = await storage.createUserSettings(req.body, userId);
