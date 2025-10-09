@@ -1,0 +1,133 @@
+ 
+[Region: europe-west4]
+==============
+Using Nixpacks
+==============
+
+context: 4q5g-Iob6
+╔══════════════════════ Nixpacks v1.38.0 ══════════════════════╗
+║ setup      │ nodejs_18, npm-9_x, openssl                     ║
+║──────────────────────────────────────────────────────────────║
+║ caddy      │ pkgs: caddy                                     ║
+║            │ cmds: caddy fmt --overwrite /assets/Caddyfile   ║
+║──────────────────────────────────────────────────────────────║
+║ install    │ npm ci                                          ║
+║──────────────────────────────────────────────────────────────║
+║ build      │ npm install && npm run build && npm run db:push ║
+║──────────────────────────────────────────────────────────────║
+║ start      │ npm start                                       ║
+╚══════════════════════════════════════════════════════════════╝
+
+internal
+load build definition from Dockerfile
+0ms
+
+internal
+load metadata for ghcr.io/railwayapp/nixpacks:ubuntu-1745885067
+371ms
+
+internal
+load .dockerignore
+0ms
+
+internal
+load build context
+0ms
+
+stage-0
+COPY .nixpacks/nixpkgs-ba913eda2df8eb72147259189d55932012df6301.nix .nixpacks/nixpkgs-ba913eda2df8eb72147259189d55932012df6301.nix cached
+0ms
+
+stage-0
+RUN nix-env -if .nixpacks/nixpkgs-ba913eda2df8eb72147259189d55932012df6301.nix && nix-collect-garbage -d cached
+0ms
+
+stage-0
+WORKDIR /app/ cached
+0ms
+
+stage-0
+COPY .nixpacks/nixpkgs-ffeebf0acf3ae8b29f8c7049cd911b9636efd7e7.nix .nixpacks/nixpkgs-ffeebf0acf3ae8b29f8c7049cd911b9636efd7e7.nix
+134ms
+
+stage-0
+RUN nix-env -if .nixpacks/nixpkgs-ffeebf0acf3ae8b29f8c7049cd911b9636efd7e7.nix && nix-collect-garbage -d
+45s
+61 store paths deleted, 559.56 MiB freed
+
+stage-0
+COPY .nixpacks/assets /assets/
+89ms
+
+stage-0
+COPY . /app/.
+20ms
+
+stage-0
+RUN  caddy fmt --overwrite /assets/Caddyfile
+137ms
+
+stage-0
+COPY . /app/.
+23ms
+
+stage-0
+RUN npm ci
+9s
+Run `npm audit` for details.
+
+stage-0
+COPY . /app/.
+119ms
+
+stage-0
+RUN npm install && npm run build && npm run db:push
+8s
+npm warn config production Use `--omit=dev` instead.
+up to date, audited 497 packages in 2s
+67 packages are looking for funding
+  run `npm fund` for details
+8 vulnerabilities (3 low, 5 moderate)
+To address issues that do not require attention, run:
+  npm audit fix
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+Run `npm audit` for details.
+npm warn config production Use `--omit=dev` instead.
+> rest-express@1.0.0 build
+> vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+vite v5.4.20 building for production...
+transforming...
+Browserslist: browsers data (caniuse-lite) is 12 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+A PostCSS plugin did not pass the `from` option to `postcss.parse`. This may cause imported assets to be incorrectly transformed. If you've recently added a PostCSS plugin that raised this warning, please contact the package author to fix the issue.
+✓ 2846 modules transformed.
+rendering chunks...
+computing gzip size...
+../dist/public/index.html                   1.25 kB │ gzip:   0.57 kB
+../dist/public/assets/index-BLmBIUpb.css   73.26 kB │ gzip:  12.03 kB
+../dist/public/assets/index--j8n78S6.js   771.71 kB │ gzip: 226.36 kB
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 5.72s
+  dist/index.js  29.9kb
+⚡ Done in 5ms
+npm warn config production Use `--omit=dev` instead.
+> rest-express@1.0.0 db:push
+> drizzle-kit push
+No config path provided, using default 'drizzle.config.ts'
+Reading config file '/app/drizzle.config.ts'
+DATABASE_URL, ensure the database is provisioned
+Dockerfile:30
+-------------------
+28 |     # build phase
+29 |     COPY . /app/.
+30 | >>> RUN --mount=type=cache,id=s/c858cc12-e880-4aa3-b94e-972b61d516cb-node_modules/cache,target=/app/node_modules/.cache npm install && npm run build && npm run db:push
+31 |
+32 |
+-------------------
+ERROR: failed to build: failed to solve: process "/bin/bash -ol pipefail -c npm install && npm run build && npm run db:push" did not complete successfully: exit code: 1
+Error: Docker build failed
