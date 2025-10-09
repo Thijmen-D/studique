@@ -175,13 +175,14 @@ export function ExamsPage() {
           setAddDialogOpen(open);
           if (!open) setEditingExam(null);
         }}
+        initialExam={editingExam}
         onAdd={async (exam) => {
           if (editingExam) {
             try {
               await apiRequest("PATCH", `/api/exams/${editingExam.id}`, {
                 ...exam,
-                progress: exam.progress || editingExam.progress,
-                status: exam.status || editingExam.status,
+                progress: exam.progress,
+                status: exam.status,
               });
               queryClient.invalidateQueries({ queryKey: ["/api/exams"] });
               toast({ title: "Success", description: "Exam updated successfully!" });

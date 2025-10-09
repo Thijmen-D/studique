@@ -163,7 +163,14 @@ export function registerRoutes(app: Express): Server {
   });
 
   app.patch("/api/exams/:id", isAuthenticated, async (req, res) => {
-    const exam = await storage.updateExam(req.params.id, req.body);
+    const updateData = { ...req.body };
+    
+    // Convert date string to proper format if present
+    if (updateData.date && typeof updateData.date === 'string') {
+      updateData.date = updateData.date;
+    }
+    
+    const exam = await storage.updateExam(req.params.id, updateData);
     if (!exam) return res.status(404).send("Exam not found");
     res.json(exam);
   });
