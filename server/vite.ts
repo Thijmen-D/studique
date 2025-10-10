@@ -45,8 +45,9 @@ export async function setupVite(app: Express, server: Server) {
     const url = req.originalUrl;
 
     try {
+      const cwd = process.cwd() || ".";
       const clientTemplate = path.resolve(
-        process.cwd(),
+        cwd,
         "client",
         "index.html",
       );
@@ -67,23 +68,19 @@ export async function setupVite(app: Express, server: Server) {
 }
 
 export function serveStatic(app: Express) {
-  // In production, we're running from dist/index.js, so public is at dist/public
-  // Use import.meta.url to get the current file's directory reliably
-  const currentDir = path.dirname(new URL(import.meta.url).pathname);
+  // In production, we're running from dist/index.js
+  // Use import.meta.url to reliably find the public folder next to the compiled code
+  const fileUrl = import.meta.url;
+  const filePath = fileUrl.startsWith('file://') 
+    ? new URL(fileUrl).pathname 
+    : fileUrl;
+  
+  const currentDir = path.dirname(filePath);
   const distPath = path.join(currentDir, "public");
 
   if (!fs.existsSync(distPath)) {
-    // Fallback: try from process.cwd() if it exists
-    const fallbackPath = process.cwd() ? path.join(process.cwd(), "dist", "public") : null;
-    if (fallbackPath && fs.existsSync(fallbackPath)) {
-      app.use(express.static(fallbackPath));
-      app.use("*", (_req, res) => {
-        res.sendFile(path.join(fallbackPath, "index.html"));
-      });
-      return;
-    }
     throw new Error(
-      `Could not find the build directory. Tried: ${distPath}${fallbackPath ? ` and ${fallbackPath}` : ''}`,
+      `Could not find the build directory at: ${distPath}. Make sure to run 'npm run build' first.`,
     );
   }
 
