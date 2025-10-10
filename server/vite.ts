@@ -67,13 +67,23 @@ export async function setupVite(app: Express, server: Server) {
 }
 
 export function serveStatic(app: Express) {
-  // In production build, dist/public contains the static files
-  // We're running from /app, so dist/public is at /app/dist/public
-  const distPath = path.resolve(process.cwd(), "dist", "public");
+  // In production, we're running from dist/index.js, so public is at dist/public
+  // Use import.meta.url to get the current file's directory reliably
+  const currentDir = path.dirname(new URL(import.meta.url).pathname);
+  const distPath = path.join(currentDir, "public");
 
   if (!fs.existsSync(distPath)) {
+    // Fallback: try from process.cwd() if it exists
+    const fallbackPath = process.cwd() ? path.join(process.cwd(), "dist", "public") : null;
+    if (fallbackPath && fs.existsSync(fallbackPath)) {
+      app.use(express.static(fallbackPath));
+      app.use("*", (_req, res) => {
+        res.sendFile(path.join(fallbackPath, "index.html"));
+      });
+      return;
+    }
     throw new Error(
-      `Could not find the build directory: ${distPath}, make sure to build the client first`,
+      `Could not find the build directory. Tried: ${distPath}${fallbackPath ? ` and ${fallbackPath}` : ''}`,
     );
   }
 
@@ -81,6 +91,6 @@ export function serveStatic(app: Express) {
 
   // fall through to index.html if the file doesn't exist
   app.use("*", (_req, res) => {
-    res.sendFile(path.resolve(distPath, "index.html"));
+    res.sendFile(path.join(distPath, "index.html"));
   });
 }
