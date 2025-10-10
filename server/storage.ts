@@ -15,7 +15,7 @@ import session from "express-session";
 import connectPg from "connect-pg-simple";
 
 export interface IStorage {
-  sessionStore: session.SessionStore;
+  sessionStore: session.Store;
   
   // Users
   getUser(id: string): Promise<User | undefined>;
@@ -72,7 +72,7 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
-  sessionStore: session.SessionStore;
+  sessionStore: session.Store;
 
   constructor() {
     const PostgresSessionStore = connectPg(session);

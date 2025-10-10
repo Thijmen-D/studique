@@ -1,4 +1,6 @@
-# Deploying Studique to Railway
+# Deploying StudyFlow to Railway
+
+✅ **Your app is now ready for Railway deployment!**
 
 ## Prerequisites
 1. A Railway account (sign up at https://railway.app)
@@ -42,17 +44,12 @@ Railway automatically provides `DATABASE_URL`, but you need to add:
 
 ### 4. Configure Build Settings (Optional)
 
-Railway will auto-detect the settings from `railway.json`, but you can verify:
+Railway will auto-detect the settings from `railway.json`:
 
-1. **Build Command:**
-   ```bash
-   npm install && npm run build && npm run db:push
-   ```
+1. **Build Command:** `npm install && npm run build && npm run db:push`
+2. **Start Command:** `npm start`
 
-2. **Start Command:**
-   ```bash
-   npm start
-   ```
+✅ These are already configured in your `railway.json` file!
 
 ### 5. Deploy
 
