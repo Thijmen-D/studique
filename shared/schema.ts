@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, integer, boolean, date, jsonb, index } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, integer, boolean, date, jsonb, index, real } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -59,7 +59,7 @@ export const grades = pgTable("grades", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   subjectId: varchar("subject_id").notNull().references(() => subjects.id, { onDelete: 'cascade' }),
-  value: integer("value").notNull(),
+  value: real("value").notNull(),
   weight: integer("weight").notNull().default(1),
   description: text("description"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
